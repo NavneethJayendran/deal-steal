@@ -1,0 +1,4 @@
+# Ignore everything in the data folder
+*
+# except for this .gitignore
+!.gitignore
