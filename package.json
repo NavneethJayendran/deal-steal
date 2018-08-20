@@ -1,0 +1,31 @@
+{
+  "name": "deal-steal",
+  "version": "1.0.0",
+  "description": "Web service for comparing online sales offers in terms of quality and affordability relative to other offers.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NavneethJayendran/deal-steal.git"
+  },
+  "author": "Navneeth Jayendran",
+  "license": "LGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/NavneethJayendran/deal-steal/issues"
+  },
+  "homepage": "https://github.com/NavneethJayendran/deal-steal#readme",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "ejs": "^2.6.1",
+    "express": "^4.16.3",
+    "express-session": "^1.15.6",
+    "jquery": "^3.3.1",
+    "lodash": "^4.17.10",
+    "mongoose": "^5.2.9",
+    "passport": "^0.4.0",
+    "passport-local": "^1.0.0",
+    "passport-local-mongoose": "^5.0.1"
+  }
+}
