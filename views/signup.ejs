@@ -1,0 +1,27 @@
+<%include partials/header.ejs%>
+<h1>Sign Up</h1>
+
+<script>
+  function validateSignup(e){
+    if ($("#pswd").val() === $("#cfrm").val()){
+      $("#errmsg").text("");
+      return true;
+    }else{
+      $("#errmsg").text("Passwords don't match!");
+      return false;
+    }
+  } 
+</script>
+
+<form action="/signup" method="POST" onsubmit='return validateSignup(event)'>
+  Username: <br>
+  <input type="text" name="username" placeholder="username" required> <br>
+  Password: <br>
+  <input id="pswd" type="password" name="password" placeholder="password" required> <br>
+  Confirm Password: <br>
+  <input id="cfrm" type="password" name="confirm" placeholder="password" required> <br>
+  <input type="submit" value="Login">
+</form>
+<p id="errmsg"><%=message%></p>
+
+<%include ./partials/footer.ejs%>

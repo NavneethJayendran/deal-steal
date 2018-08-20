@@ -1,0 +1,15 @@
+<%include partials/header.ejs%>
+<h1>Welcome to DealSteal!</h1>
+
+<p>Browse for a category of product offers.</p>
+<ul>
+<% categories.forEach(function(category){ %>
+  <li>
+    <a href="category/<%=category%>">
+      <%=category%>
+    </a>
+  </li>
+<% }); %>
+</ul>
+
+<%include ./partials/footer.ejs%>
