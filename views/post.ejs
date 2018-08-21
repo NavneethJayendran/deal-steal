@@ -1,0 +1,31 @@
+<%include partials/header.ejs%>
+
+<h1> 
+  <a href="/category/<%=category%>">
+    <%=categoryName%> 
+  </a> 
+</h1>
+
+<p><%=post.text%></p>
+<p>Posted by user <%=post.user.username%></p>
+<p><%=post.creationDate%></p>
+<%if (post.creationDate !== post.editDate){%>
+  <p>last edited <%=post.editDate%></p>
+<%}%>
+<hr>
+<form action="/category/<%=category%>/<%=post.id%>" method="POST">
+  <input type="textarea" name="text"/>
+  <input type="submit" value="Comment"/>
+</form>
+<hr>
+<ul>
+  <%comments.forEach(function(comment){%>
+    <li>
+       <p><%=comment.text%></p>
+       <%=comment.user.username%> on <%=comment.creationDate%>
+    </li>
+  <%});%>
+</ul>
+
+
+<%include partials/footer.ejs%>

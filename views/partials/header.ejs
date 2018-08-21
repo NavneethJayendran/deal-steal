@@ -2,11 +2,25 @@
 <html dir="ltr" lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Nothing</title>
+    <title>TODO: Add page-specific titles</title>
     <script
       src="https://code.jquery.com/jquery-3.3.1.js"
       integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60="
       crossorigin="anonymous"></script>
+    <link rel="stylesheet" type="text/css" href="/css/global.css"></style>
   </head>
 <body>
-  <p>Header over here</p>
+  <form action="/logout" method="POST" id="globalLogout"></form>
+  <ul class="navbar">
+    <li class="left"><a href="/">DealSteal</a></li>
+    <%if (!username){%>
+      <li><a href="/login">Login</a></li>
+      <li><a href="/signup">Sign Up</a></li>
+    <%}else{%>
+      <li>
+        <a href="javascript:document.forms['globalLogout'].submit()">
+          Logout
+        </a>
+      </li>
+    <%}%>
+  </ul>

@@ -1,0 +1,17 @@
+<%include partials/header.ejs%>
+
+<link rel="stylesheet" type="text/css" href="/css/new_post.css"></style>
+
+<form action="/logout" method="POST" id="logout"></form>
+
+<h1>Post a Deal to category/<%=category%></h1>
+<p>Post as <%=username%> 
+  (<input type="submit" for="logout" method="POST" value="not you?">)
+</p>
+<hr>
+<form action="/category/<%=category%>/new" method="POST">
+  <input class="post-box" type="textarea" name="content" placeholder="Information here..."/>
+  <input type="submit" value="Submit"/>
+</form>
+
+<%include partials/footer.ejs%>

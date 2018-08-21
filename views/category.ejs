@@ -1,3 +1,19 @@
 <%include partials/header.ejs%>
-<h1> <%= category %> </h1>
+
+<h1><%=categoryName%></h1>
+
+<ul>
+  <%posts.forEach(function(post){%>
+    <li>
+       <%=post.user.username%> on <%=post.creationDate%>
+       <p><%=post.text%></p>
+       <a href="/category/<%=category%>/<%=post.id%>">Read more</a>
+    </li>
+  <%});%>
+</ul>
+
+<form action="/category/<%=category%>/new" method="GET">
+  <input type="submit" value="Post a New Deal!"/>
+</form>
+
 <%include partials/footer.ejs%>

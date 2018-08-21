@@ -7,7 +7,6 @@ const userSchema = mongoose.Schema({
   username: String,
   password: String, 
   creationDate: {type: Date, default: Date()},
-  posts: [{type: Schema.Types.ObjectId, ref: "Post"}]
 });
 
 userSchema.plugin(passportLocalMongoose);
