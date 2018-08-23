@@ -26,13 +26,20 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // log everything to Console, errors to err.log, everything to combined.log
 const loggingLevels = ['error', 'warn', 'info', 'verbose', 'debug', 'silly'];
+const loggingLevel =  loggingLevels.includes(process.env.LOG_LEVEL) ? 
+    process.env.LOG_LEVEL : 'info'; // default is `info`, otherwise use env
+console.log(`Logging at level "${loggingLevel}"`);
+
 const logger = winston.createLogger({
-  level : (loggingLevels.includes(process.env.LOG_LEVEL) ? 
-    process.env.LOG_LEVEL : 'info'), // default is `info`, otherwise use env
+  level : loggingLevel,
   transports: [
-    new winston.transports.Console(),
+    new (winston.transports.Console)(
+     {level: 'debug', json: false, colorize: true, 
+      timestamp: () => (new Date()).toLocaleTimeString()}
+    ),
     new winston.transports.File({ filename: 'error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'combined.log' })
+    new winston.transports.File({ filename: 'combined.log', level: 'info' }),
+    new winston.transports.File({ filename: 'debug.log', level: 'silly' }),
   ]
 });
 
@@ -133,7 +140,9 @@ app.post("/category/:productType/new", function(req, res){
   }
   if (!user) {return res.redirect("/login");}
   let content = req.body.content ;
-  let post = Post.create({user: user._id, category: category, text: content},
+  let postData = {username: user.username, category: category, text: content};
+  winston.debug(`Creating new post: ${JSON.stringify(postData)}`);
+  let post = Post.create(postData,
     function(err, post){
       if (err){
         logger.error(err);
@@ -162,6 +171,7 @@ app.get("/category/:productType/:postId/", function(req, res){
             logger.error(err);
             return res.send(err); 
           }
+          winston.debug(comments);
           let params = {comments: comments, post: post, category: category,
                         categoryName : toCategoryName(category)};
           return res.render("post.ejs", params);
@@ -185,7 +195,7 @@ app.post("/category/:productType/:postId/", function(req, res){
       if (!post) { return res.send("Post " + postID + " not found."); }
       let content = req.body.text;
       Comment.create({text: content, replyTo : null, post: ObjectId(postId),
-                      user: req.user._id}, 
+                      username: user.username}, 
         function(err, comment){
           if (err) {
             logger.error(err); 

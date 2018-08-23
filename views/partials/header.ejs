@@ -18,8 +18,8 @@
       <li><a href="/signup">Sign Up</a></li>
     <%}else{%>
       <li>
-        <a href="javascript:document.forms['globalLogout'].submit()">
-          Logout
+        <a href="javascript:$('#globalLogout').submit()">
+          Logged in as <%=username%> (Logout)
         </a>
       </li>
     <%}%>

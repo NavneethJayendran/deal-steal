@@ -5,7 +5,7 @@
 <ul>
   <%posts.forEach(function(post){%>
     <li>
-       <%=post.user.username%> on <%=post.creationDate%>
+       <%=post.username%> on <%=post.creationDate%>
        <p><%=post.text%></p>
        <a href="/category/<%=category%>/<%=post.id%>">Read more</a>
     </li>

@@ -15,7 +15,7 @@
 }
 
 .navbar li a {
-  display: block;
+  display: inline-block;
   color: white;
   text-align: center;
   padding: 14px 16px;
@@ -25,6 +25,11 @@
 .navbar li a:hover {
   background-color: #4CAF50;
 }
+
+.navbar li fake:hover{
+  background-color: inherit
+}
+
 
 
 /* see https://www.w3schools.com/howto/tryit.asp?filename=tryhow_js_alert
