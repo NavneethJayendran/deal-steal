@@ -3,18 +3,26 @@
 <h1>Sign Up</h1>
 
 <script>
-  function validateSignup(e){
-    if ($("#pswd").val() === $("#cfrm").val()){
-      $("#errmsg").text("");
-      return true;
-    }else{
-      $("#errmsg").text("Passwords don't match!");
+  function setErrorMessage(id, msg){
+    $(`#${id} p`).text(msg);
+    if (msg){
+      $(`#${id}`).show();
       return false;
+    }else{
+      $(`#${id}`).hide();
+      return true;
     }
+  }
+
+  function validateSignup(){
+    return setErrorMessage("signup-errmsg", 
+      $("#pswd").val() === $("#cfrm").val() ? 
+        "" : "Passwords don't match"
+    );
   } 
 </script>
 
-<form action="/signup" method="POST" onsubmit='return validateSignup(event)'>
+<form action="/signup" method="POST" onsubmit='return validateSignup()'>
   Username: <br>
   <input type="text" name="username" placeholder="username" required> <br>
   Password: <br>
@@ -23,6 +31,13 @@
   <input id="cfrm" type="password" name="confirm" placeholder="password" required> <br>
   <input type="submit" value="Login">
 </form>
-<p id="errmsg"><%=message%></p>
+
+<div id="signup-errmsg" class="error-message">
+  <p></p>
+  <button onclick="setErrorMessage('signup-errmsg', '')" 
+          class="error-close-btn"/>
+</div>
+
+<script>setErrorMessage('signup-errmsg', '<%=message%>');</script>
 
 <%include ./partials/footer.ejs%>

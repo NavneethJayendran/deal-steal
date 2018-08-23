@@ -2,6 +2,20 @@
 
 <h1>Login</h1>
 
+<script>
+  function setErrorMessage(id, msg){
+    $(`#${id} p`).text(msg);
+    if (msg){
+      $(`#${id}`).show();
+      return false;
+    }else{
+      $(`#${id}`).hide();
+      return true;
+    }
+  }
+</script>
+
+<p>Don't have an account? <a href="/signup">Sign up today!</a></p>
 <form action="/login" method="POST">
   Username: <br>
   <input type="text" name="username" placeholder="username" required> <br>
@@ -10,6 +24,12 @@
   <input type="submit" value="Login">
 </form>
 
-<%if (message) {%> <p> <%=message%> </p> <%;}%>
+<div id="login-errmsg" class="error-message">
+  <p></p>
+  <button onclick="setErrorMessage('login-errmsg', '')" 
+          class="error-close-btn"/>
+</div>
+
+<script>setErrorMessage('login-errmsg', '<%=message%>');</script>
 
 <%include ./partials/footer.ejs%>

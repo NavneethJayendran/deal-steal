@@ -22,22 +22,40 @@
   text-decoration: none;
 }
 
-.navbarSubmit {
-  font-size: 14px;
-  background-color: transparent;
-  border: none;
-  text-align: center;
-  padding: 14px 16px;
-  text-decoration: none;
-  color: white;
-  cursor: pointer;
-}
-
-.navbarSubmit:hover {
-  background-color: #4CAF50;
-  outline: none;
-}
-
 .navbar li a:hover {
   background-color: #4CAF50;
+}
+
+
+/* see https://www.w3schools.com/howto/tryit.asp?filename=tryhow_js_alert
+ * for the error stylesheets
+ */
+.error-message {
+  color: white;
+  padding: 20px;
+  background-color: #f44336;
+  animation-name: flash;
+  animation-duration: 1s;
+  animation-timing-function: linear;
+}
+
+.error-message:empty {
+  display: none
+}
+
+.error-close-btn {
+  margin-left: 15px;
+  color: white;
+  font-weight: bold;
+  float: right;
+  font-size: 22px;
+  line-height: 20px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+@keyframes flash {
+  0% { opacity: 1.0; }
+  50% { opacity : 0.5; }
+  100% { opacity: 1.0; } 
 }
