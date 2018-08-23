@@ -107,7 +107,6 @@ app.get("/category/:productType", function(req, res){
   }
   Post.find({category : category})
     .sort({creationDate : -1})
-    .populate('user', 'username')
     .exec(function(err, allPosts){
       if (err) { logger.log(err); }
       logger.debug(allPosts);
@@ -152,15 +151,13 @@ app.get("/category/:productType/:postId/", function(req, res){
   if (!categories.includes(category)){
     return res.send(category + " is not a recognized product type.");
   }
-  Post.findById(postId)
-    .populate("user", "username").exec(function(err, post){
+  Post.findById(postId, function(err, post){
       if (err) { 
         logger.error(err);
         return res.send(err); 
       }
       if (!post) { return res.send("Post " + postID + " not found."); }
-      Comment.find({post: ObjectId(postId)})
-        .populate("user", "username").exec(function(err, comments){
+      Comment.find({post: ObjectId(postId)}, function(err, comments){
           if (err) { 
             logger.error(err);
             return res.send(err); 
@@ -209,10 +206,11 @@ app.get("/signup", function(req, res){
 });
 
 app.post("/signup", function(req, res){
+  if (req.user) { res.redirect("/"); }
   let newUser = new User({username: req.body.username});
   User.register(newUser, req.body.password, function(err, user, info){
     if (err){
-      logger.error(err);
+      logger.warn(err);
       return res.render("signup.ejs", {message: err.message});
     }
     logger.info("User " + user.username + " successfully created.\n");
@@ -223,11 +221,13 @@ app.post("/signup", function(req, res){
 });
 
 app.get("/login", function(req, res){
+  if (req.user) { return res.redirect("/"); }
   let params = {message: ""};
   res.render("login.ejs", params);
 });
 
 app.post("/login", function(req, res, next){
+  if (req.user) { return res.redirect("/"); }
   let params = {message: "Invalid username or password."}
   let authenticator = passport.authenticate('local', 
     function(err, user, info){
@@ -268,7 +268,7 @@ app.get("*", function(req, res){
 const server = app.listen(3001, function(){
   let host = server.address().address,
       port = server.address().port;
-  logger.info("DealSteal server listening at %s:%s", host, port);
+  logger.info(`DealSteal server listening at ${host}:${port}`);
 });
 
 // install signal handler
