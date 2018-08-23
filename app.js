@@ -8,7 +8,8 @@ const express        = require('express'),
       passport       = require('passport'),
       bodyParser     = require('body-parser'),
       expressSession = require('express-session'),
-      LocalStrategy  = require('passport-local');
+      LocalStrategy  = require('passport-local'),
+      winston        = require('winston');     
       
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -21,6 +22,29 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(bodyParser.urlencoded({ extended: true }));
 
 
+// BEGIN logging
+
+// log everything to Console, errors to err.log, everything to combined.log
+const loggingLevels = ['error', 'warn', 'info', 'verbose', 'debug', 'silly'];
+const logger = winston.createLogger({
+  level : (loggingLevels.includes(process.env.LOG_LEVEL) ? 
+    process.env.LOG_LEVEL : 'info'), // default is `info`, otherwise use env
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: 'error.log', level: 'error' }),
+    new winston.transports.File({ filename: 'combined.log' })
+  ]
+});
+
+// add logging middleware to all routes
+app.use(function logRoute(req, res, next){
+  logger.info(req.method + " " + req.originalUrl);
+  if (Object.keys(req.params).length) { winston.verbose(req.params); }
+  next();
+});
+// END logging
+
+// TODO make these a database collection
 const categories = ["clothes", "furniture", "toys", "games", "jewelry", 
  "health_and_meds", "cars"
 ];
@@ -55,16 +79,17 @@ const mongodb_addr = "mongodb://localhost/dealsteal";
 mongoose.connect(mongodb_addr, {useNewUrlParser: true}, 
   function(err){
     if (err){
-      console.log(err);
+      logger.log(err);
       process.exit(1);
     }
-    console.log("Connected to " + mongodb_addr);
+    logger.info("Connected to " + mongodb_addr);
   }
 );
 
 //  =================
 // BEGIN all routes
 //  =================
+
 
 app.get("/", function(req, res){
   let params = {categories: categories}
@@ -77,7 +102,6 @@ const toCategoryName = category =>
 app.get("/category/:productType", function(req, res){
   let category = req.params.productType;
   let categoryFmt = toCategoryName(category);
-  console.log("GET to /category/" + category);
   if (!categories.includes(category.toLowerCase())){
     return res.send(category + " is not a recognized product type.");
   }
@@ -85,8 +109,8 @@ app.get("/category/:productType", function(req, res){
     .sort({creationDate : -1})
     .populate('user', 'username')
     .exec(function(err, allPosts){
-      if (err) { console.log(err); }
-      console.log(allPosts);
+      if (err) { logger.log(err); }
+      logger.debug(allPosts);
       let params = {categoryName: categoryFmt, category : category, 
                     posts: allPosts};
       res.render("category.ejs", params);
@@ -96,7 +120,6 @@ app.get("/category/:productType", function(req, res){
 app.get("/category/:productType/new", function(req, res){
   let category = req.params.productType;
   let user = req.user;
-  console.log("GET to /category/" + category + "/new route");
   if (!user){
     return res.redirect("/login");
   }
@@ -106,7 +129,6 @@ app.get("/category/:productType/new", function(req, res){
 app.post("/category/:productType/new", function(req, res){
   let category = req.params.productType;
   let user = req.user;
-  console.log("POST to /category/" + category + "/new route");
   if (!categories.includes(category)){
     return res.send(category + " is not a recognized product type.");
   }
@@ -115,7 +137,7 @@ app.post("/category/:productType/new", function(req, res){
   let post = Post.create({user: user._id, category: category, text: content},
     function(err, post){
       if (err){
-        console.log(err);
+        logger.error(err);
         return res.redirect("/category/" + category + "/new");
       }
     }
@@ -127,17 +149,22 @@ app.get("/category/:productType/:postId/", function(req, res){
   let category = req.params.productType;
   let user = req.user;
   let postId = req.params.postId;
-  console.log("GET to /category/" + category + "/" + postId + " route");
   if (!categories.includes(category)){
     return res.send(category + " is not a recognized product type.");
   }
   Post.findById(postId)
     .populate("user", "username").exec(function(err, post){
-      if (err) { return res.send(err); }
+      if (err) { 
+        logger.error(err);
+        return res.send(err); 
+      }
       if (!post) { return res.send("Post " + postID + " not found."); }
       Comment.find({post: ObjectId(postId)})
         .populate("user", "username").exec(function(err, comments){
-          if (err) { return res.send(err); }
+          if (err) { 
+            logger.error(err);
+            return res.send(err); 
+          }
           let params = {comments: comments, post: post, category: category,
                         categoryName : toCategoryName(category)};
           return res.render("post.ejs", params);
@@ -149,19 +176,24 @@ app.post("/category/:productType/:postId/", function(req, res){
   let category = req.params.productType;
   let user = req.user;
   let postId = req.params.postId;
-  console.log("POST to /category/" + category + "/" + postId + " route");
   if (!user) { return res.redirect("/login"); }
   if (!categories.includes(category)){
     return res.send(category + " is not a recognized product type.");
   }
   Post.findById(postId, function(err, post){
-      if (err) { return res.send(err); }
+      if (err) { 
+        logger.error(err);
+        return res.send(err); 
+      }
       if (!post) { return res.send("Post " + postID + " not found."); }
       let content = req.body.text;
       Comment.create({text: content, replyTo : null, post: ObjectId(postId),
                       user: req.user._id}, 
         function(err, comment){
-          if (err) { return res.send(err); }
+          if (err) {
+            logger.error(err); 
+            return res.send(err); 
+          }
           return res.redirect("/category/" + category + "/" + postId)
         }
       );
@@ -173,19 +205,17 @@ app.post("/category/:productType/:postId/", function(req, res){
 //  =================
 
 app.get("/signup", function(req, res){
-  console.log("GET to /signup route");
   res.render("signup.ejs", {message: ""});
 });
 
 app.post("/signup", function(req, res){
-  console.log("POST to /signup route");
   let newUser = new User({username: req.body.username});
   User.register(newUser, req.body.password, function(err, user, info){
     if (err){
-      console.log(err);
+      logger.error(err);
       return res.render("signup.ejs", {message: err.message});
     }
-    console.log("User " + user.username + " successfully created.\n");
+    logger.info("User " + user.username + " successfully created.\n");
     passport.authenticate("local")(req, res, function(){
       res.redirect("/");
     });
@@ -193,13 +223,11 @@ app.post("/signup", function(req, res){
 });
 
 app.get("/login", function(req, res){
-  console.log("GET to /login route");
   let params = {message: ""};
   res.render("login.ejs", params);
 });
 
 app.post("/login", function(req, res, next){
-  console.log("POST to /login route");
   let params = {message: "Invalid username or password."}
   let authenticator = passport.authenticate('local', 
     function(err, user, info){
@@ -215,7 +243,6 @@ app.post("/login", function(req, res, next){
 });
 
 app.post("/logout", function(req, res, next){
-  console.log("POST to /logout route");
   if (req.user) {req.logout();}
   res.redirect("/");
 });
@@ -224,11 +251,12 @@ app.post("/logout", function(req, res, next){
 //  =================
 
 app.get(":invalid", function(req, res){
+  logger.warn("Get to Invalid Route: " + req.originalUrl);
   res.send("Page \"" + req.params.invalid + "\" not found.");
 });
 
 app.get("*", function(req, res){
-  console.log("Get to Invalid Route: " + req.originalUrl);
+  logger.warn("Get to Invalid Route: " + req.originalUrl);
   res.redirect("/");
 });
 
@@ -236,20 +264,18 @@ app.get("*", function(req, res){
 // END all routes
 //  =================
 
-
-
 // start the server
 const server = app.listen(3001, function(){
   let host = server.address().address,
       port = server.address().port;
-  console.log("DealSteal server listening at %s:%s", host, port);
+  logger.info("DealSteal server listening at %s:%s", host, port);
 });
 
 // install signal handler
 process.on('SIGINT', function(){
   mongoose.connection.close(function(){
-    console.log("Mongoose connection closed.");
-    console.log("Shutting down the server...");
+    logger.info("Mongoose connection closed.");
+    logger.info("Shutting down the server...");
     process.exit(0);
   });
 });
