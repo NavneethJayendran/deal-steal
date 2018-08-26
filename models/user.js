@@ -10,7 +10,7 @@ const userSchema = mongoose.Schema({
     index: {unique: true}
   },
   password: String, 
-  creationDate: {type: Date, default: Date()},
+  creationDate: {type: Date, default: Date.now},
 });
 
 userSchema.plugin(passportLocalMongoose);

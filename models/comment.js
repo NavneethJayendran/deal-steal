@@ -7,8 +7,8 @@ const commentSchema = mongoose.Schema({
     required: [true, 'someone posted this comment']
   },
   post: {type: Schema.Types.ObjectId, ref: "Post"},
-  creationDate: {type: Date, default: Date()},
-  editDate: {type: Date, default: Date()},
+  creationDate: {type: Date, default: Date.now },
+  editDate: {type: Date, default: Date.now },
   text: String,
   replyTo: {
     type: Schema.Types.ObjectId, 

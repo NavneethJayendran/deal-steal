@@ -7,8 +7,8 @@ const postSchema = mongoose.Schema({
     required: [true, 'someone posted this']
   }, 
   category: String,
-  creationDate: {type: Date, default: Date()},
-  editDate: {type: Date, default: Date()},
+  creationDate: {type: Date, default: Date.now},
+  editDate: {type: Date, default: Date.now},
   text: String,
 });
 
