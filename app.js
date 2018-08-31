@@ -9,7 +9,8 @@ const express        = require('express'),
       bodyParser     = require('body-parser'),
       expressSession = require('express-session'),
       LocalStrategy  = require('passport-local'),
-      winston        = require('winston');     
+      winston        = require('winston'),
+      methodOverride = require('method-override');     
       
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -19,7 +20,18 @@ const app = express();
 app.set('view engine', 'ejs');
 app.set('views', './views');
 app.use(express.static(path.join(__dirname, "public")));
+
+// Use bodyParser to preprocess request bodies, and use methodOverride to
+// interpret any POST request with a hidden input /_method=(DELETE|PUT)/
+// as a DELETE or PUT request respectively
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(methodOverride(function(req, res){
+  if (req.body && typeof req.body === 'object' && '_method' in req.body){
+    let method = req.body._method;
+    delete req.body._method;
+    return method;
+  }
+}));
 
 
 // BEGIN logging
@@ -179,7 +191,41 @@ app.get("/category/:productType/:postId/", function(req, res){
     });
 });
 
-app.post("/category/:productType/:postId/", function(req, res){
+app.delete("/category/:productType/:postId/", function(req, res){
+  let category = req.params.productType;
+  let user = req.user;
+  let postId = req.params.postId;
+  if (!categories.includes(category)){
+    return res.send(category + " is not a recognized product type.");
+  }
+  Post.findById(postId, function(err, post){
+      if (err) { 
+        logger.error(err);
+        return res.send(err); 
+      }
+      if (!post) { return res.send("Post " + postID + " not found."); }
+      if (user.username !== post.username){
+        logger.error(
+          `User ${user.username} tried to delete another user's post.`
+        );
+        return res.send("Permission denied.");
+      }
+      Comment.deleteMany({post: ObjectId(postId)}, function(err){
+        if (err) { 
+          logger.error(err);
+        }
+      });
+      Post.deleteOne({_id: ObjectId(postId)}, function(err){
+        if (err) {
+          logger.error(err);
+          return res.send(err);
+        }
+        return res.redirect("/category/" + category);
+      });
+    });
+});
+
+app.post("/category/:productType/:postId/comment", function(req, res){
   let category = req.params.productType;
   let user = req.user;
   let postId = req.params.postId;
@@ -206,6 +252,34 @@ app.post("/category/:productType/:postId/", function(req, res){
       );
   });
 });
+
+app.delete("/category/:productType/:postId/comment/:commentId", 
+  function(req, res){
+    let category = req.params.productType;
+    let user = req.user;
+    let postId = req.params.postId;
+    let commentId = req.params.commentId;
+    if (!user) { return res.redirect("/login"); }
+    if (!categories.includes(category)){
+      return res.send(category + " is not a recognized product type.");
+    }
+    Post.findById(postId, function(err, post){
+      if (err) { 
+        logger.error(err);
+        return res.send(err); 
+      }
+      if (!post) { return res.send("Post " + postID + " not found."); }
+      Comment.deleteOne({_id : ObjectId(commentId)}, function(err){
+        if (err){
+          logger.error(err);
+          return res.send(err);
+        }
+        return res.redirect(`/category/${category}/${postId}`);
+      });
+  });
+});
+
+
 
 //  =================
 // BEGIN auth routes

@@ -1,5 +1,15 @@
 <%include partials/header.ejs%>
 
+<script>
+  function confirmPostDeletion(){
+    return confirm("Are you sure you want to delete this post?");
+  }
+
+  function confirmCommentDeletion(){
+    return confirm ("Are you sure you want to delete this comment?");
+  }
+</script>
+
 <h1> 
   <a href="/category/<%=category%>">
     <%=categoryName%> 
@@ -12,11 +22,21 @@
 <%if (post.creationDate !== post.editDate){%>
   <p>last edited <%=post.editDate%></p>
 <%}%>
+
+<%if (username === post.username){%>
+  <form action="/category/<%=category%>/<%=post.id%>" method="POST"
+   onsubmit="return confirmPostDeletion()">
+    <input type="hidden" name="_method" value="DELETE"/>
+    <input type="submit" value="Delete post"/>
+  </form>
+<%}%>
+
 <hr>
-<form action="/category/<%=category%>/<%=post.id%>" method="POST">
+<form action="/category/<%=category%>/<%=post.id%>/comment" method="POST">
   <input type="textarea" name="text"/>
   <input type="submit" value="Comment"/>
 </form>
+
 <hr>
 <ul>
   <%comments.forEach(function(comment){%>
@@ -24,6 +44,15 @@
        <p><%=comment.text%></p>
        <%=comment.username%> on <%=comment.creationDate%> by 
        <%=comment.username%>
+
+       <%if (username === comment.username){%>
+         <form action="/category/<%=category%>/<%=post.id%>/comment/<%=comment.id%>" 
+          method="POST" onsubmit="return confirmCommentDeletion();">
+           <input type="hidden" name="_method" value="DELETE"/>
+           <input type="submit" value="Delete comment"/>
+         </form> 
+       <%}%>
+
     </li>
   <%});%>
 </ul>
