@@ -10,8 +10,8 @@ const express        = require('express'),
       expressSession = require('express-session'),
       LocalStrategy  = require('passport-local'),
       winston        = require('winston'),
-      methodOverride = require('method-override');     
-      
+      methodOverride = require('method-override');
+
 const ObjectId = mongoose.Types.ObjectId;
 
 // Define app and establish project structure
@@ -32,6 +32,7 @@ app.use(methodOverride(function(req, res){
     return method;
   }
 }));
+
 
 
 // BEGIN logging
@@ -74,6 +75,10 @@ const User    = require("./models/user"),
 
 
 // BEGIN Configure Passport
+
+// TODO replace Passport configuration with auth.initAppAuthentication()
+const auth = require("./routes/auth");
+
 app.use(expressSession({
   secret: "One-time pads are cryptographically secure but not practical.",
   resave: false,
@@ -225,7 +230,7 @@ app.delete("/category/:productType/:postId/", function(req, res){
     });
 });
 
-app.post("/category/:productType/:postId/comment", function(req, res){
+app.post("/category/:productType/:postId/", function(req, res){
   let category = req.params.productType;
   let user = req.user;
   let postId = req.params.postId;
@@ -278,8 +283,6 @@ app.delete("/category/:productType/:postId/comment/:commentId",
       });
   });
 });
-
-
 
 //  =================
 // BEGIN auth routes
