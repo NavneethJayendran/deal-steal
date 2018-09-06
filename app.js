@@ -5,11 +5,7 @@ const express        = require('express'),
       path           = require('path'),
       mongoose       = require('mongoose'),
       url            = require('url'),
-      passport       = require('passport'),
       bodyParser     = require('body-parser'),
-      expressSession = require('express-session'),
-      LocalStrategy  = require('passport-local'),
-      winston        = require('winston'),
       methodOverride = require('method-override');
 
 const ObjectId = mongoose.Types.ObjectId;
@@ -34,32 +30,14 @@ app.use(methodOverride(function(req, res){
 }));
 
 
-
 // BEGIN logging
 
-// log everything to Console, errors to err.log, everything to combined.log
-const loggingLevels = ['error', 'warn', 'info', 'verbose', 'debug', 'silly'];
-const loggingLevel =  loggingLevels.includes(process.env.LOG_LEVEL) ? 
-    process.env.LOG_LEVEL : 'info'; // default is `info`, otherwise use env
-console.log(`Logging at level "${loggingLevel}"`);
-
-const logger = winston.createLogger({
-  level : loggingLevel,
-  transports: [
-    new (winston.transports.Console)(
-     {level: 'debug', json: false, colorize: true, 
-      timestamp: () => (new Date()).toLocaleTimeString()}
-    ),
-    new winston.transports.File({ filename: 'error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'combined.log', level: 'info' }),
-    new winston.transports.File({ filename: 'debug.log', level: 'silly' }),
-  ]
-});
-
+const logger = require("./logging/logger");
+ 
 // add logging middleware to all routes
 app.use(function logRoute(req, res, next){
   logger.info(req.method + " " + req.originalUrl);
-  if (Object.keys(req.params).length) { winston.verbose(req.params); }
+  if (Object.keys(req.params).length) { logger.verbose(req.params); }
   next();
 });
 // END logging
@@ -76,27 +54,9 @@ const User    = require("./models/user"),
 
 // BEGIN Configure Passport
 
-// TODO replace Passport configuration with auth.initAppAuthentication()
 const auth = require("./routes/auth");
 
-app.use(expressSession({
-  secret: "One-time pads are cryptographically secure but not practical.",
-  resave: false,
-  saveUninitialized: false
-}));
-app.use(passport.initialize());
-app.use(passport.session());
-passport.use(new LocalStrategy(User.authenticate()));
-passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser());
-
-function navbarLoginCheck(req, res, next) {
-  res.locals.username = req.user ? req.user.username : null;
-  next();
-}
-
-app.use(navbarLoginCheck);
-// END Configure Passport
+auth.initAppAuthentication(app);
 
 // Connect to database and quit if this operation fails
 const mongodb_addr = "mongodb://localhost/dealsteal";
@@ -158,7 +118,7 @@ app.post("/category/:productType/new", function(req, res){
   if (!user) {return res.redirect("/login");}
   let content = req.body.content ;
   let postData = {username: user.username, category: category, text: content};
-  winston.debug(`Creating new post: ${JSON.stringify(postData)}`);
+  logger.debug(`Creating new post: ${JSON.stringify(postData)}`);
   let post = Post.create(postData,
     function(err, post){
       if (err){
@@ -182,13 +142,13 @@ app.get("/category/:productType/:postId/", function(req, res){
         logger.error(err);
         return res.send(err); 
       }
-      if (!post) { return res.send("Post " + postID + " not found."); }
+      if (!post) { return res.send("Post " + postId + " not found."); }
       Comment.find({post: ObjectId(postId)}, function(err, comments){
           if (err) { 
             logger.error(err);
             return res.send(err); 
           }
-          winston.debug(comments);
+          logger.debug(comments);
           let params = {comments: comments, post: post, category: category,
                         categoryName : toCategoryName(category)};
           return res.render("post.ejs", params);
@@ -288,51 +248,12 @@ app.delete("/category/:productType/:postId/comment/:commentId",
 // BEGIN auth routes
 //  =================
 
-app.get("/signup", function(req, res){
-  res.render("signup.ejs", {message: ""});
-});
+app.use("/login", auth.loginRouter);
 
-app.post("/signup", function(req, res){
-  if (req.user) { res.redirect("/"); }
-  let newUser = new User({username: req.body.username});
-  User.register(newUser, req.body.password, function(err, user, info){
-    if (err){
-      logger.warn(err);
-      return res.render("signup.ejs", {message: err.message});
-    }
-    logger.info("User " + user.username + " successfully created.\n");
-    passport.authenticate("local")(req, res, function(){
-      res.redirect("/");
-    });
-  });
-});
+app.use("/logout", auth.logoutRouter);
 
-app.get("/login", function(req, res){
-  if (req.user) { return res.redirect("/"); }
-  let params = {message: ""};
-  res.render("login.ejs", params);
-});
+app.use("/signup", auth.signupRouter);
 
-app.post("/login", function(req, res, next){
-  if (req.user) { return res.redirect("/"); }
-  let params = {message: "Invalid username or password."}
-  let authenticator = passport.authenticate('local', 
-    function(err, user, info){
-      if (err)   { return next(err); }
-      if (!user) { return res.render('login.ejs', params); }
-      req.logIn(user, function(err) {
-        if (err) { return next(err); }
-        return res.redirect('/');
-      });
-    }
-  );
-  authenticator(req, res, next);
-});
-
-app.post("/logout", function(req, res, next){
-  if (req.user) {req.logout();}
-  res.redirect("/");
-});
 //  =================
 // END auth routes
 //  =================

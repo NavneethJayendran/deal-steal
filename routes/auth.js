@@ -7,15 +7,21 @@ const express = require('express'),
 const User = require('../models/user');
 
 // Initialize auth routers
-const loginRouter = express.Router(),
-      logoutRouter = express.Router();
+const loginRouter   = express.Router({mergeParams: true}),
+      logoutRouter  = express.Router({mergeParams: true}),
+      signupRouter  = express.Router({mergeParams: true}),
+      signoutRouter = express.Router({mergeParams: true});
 
+// GET request renders login page
 loginRouter.get('/', function(req, res){
   if (req.user) { return res.redirect("/"); }
   let params = {message: ""};
   res.render("login.ejs", params);
 });
 
+// POST request attempts to login as a given user and redirects to: 
+//  -the login page with an error message in the event of a failure
+//  -the home page in the event of success
 loginRouter.post("/", function(req, res, next){
   if (req.user) { return res.redirect("/"); }
   let params = {message: "Invalid username or password."};
@@ -32,10 +38,36 @@ loginRouter.post("/", function(req, res, next){
   authenticator(req, res, next);
 });
 
-logoutRouter.post("/logout", function(req, res, next){
+// POST request redirects to home page and logs out the user if applicablee
+logoutRouter.post("/", function(req, res, next){
   if (req.user) {req.logout();}
   res.redirect("/");
 });
+
+// GET request renders the signup page
+signupRouter.get("/", function(req, res){
+  res.render("signup.ejs", {message: ""});
+});
+
+// POST request attempts to signup a new user iff a user is not already logged
+// in. The signup page is rendered with an error message in the event of a
+// failure. Otherwise, a new user is created, and a redirect to the home page
+// occurs
+signupRouter.post("/", function(req, res){
+  if (req.user) { res.redirect("/"); }
+  let newUser = new User({username: req.body.username});
+  User.register(newUser, req.body.password, function(err, user, info){
+    if (err){
+      //logger.warn(err);
+      return res.render("signup.ejs", {message: err.message});
+    }
+    //logger.info("User " + user.username + " successfully created.\n");
+    passport.authenticate("local")(req, res, function(){
+      res.redirect("/");
+    });
+  });
+});
+
 
 function initAppAuthentication(app){
   app.use(expressSession({
@@ -60,5 +92,6 @@ function initAppAuthentication(app){
 module.exports = {
   loginRouter: loginRouter,
   logoutRouter: logoutRouter,
+  signupRouter: signupRouter,
   initAppAuthentication: initAppAuthentication
 };
